@@ -27,27 +27,17 @@ class UserMDBClass {
       return undefined;
     }
   };
-  findUserByEmail = async (emailValue) => {
+  findUser = async (filter) => {
     try {
-      let myUserArray = await usersModel.find({ email: emailValue }).lean();
+      let myUserArray = await usersModel.find(filter).lean();
       if (!myUserArray) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
       let myUser = myUserArray[0];
       myUser = { ...myUser, _id: JSON.parse(JSON.stringify(myUser._id))};
       return myUser;
     } catch (error) {
       return undefined;
-    }
-  };
-  findUserById = async (uid) => {
-    try {
-      let myUser = await this.model.findById(uid);
-      if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);  
-      myUser = { ...myUser, _id: JSON.parse(JSON.stringify(myUser._id))};
-      return myUser;
-    } catch (error) {
-      return undefined;
-    }
-  };
+    };
+  }
   addUser = async (user) => {
     try {
 
@@ -96,7 +86,7 @@ class UserMDBClass {
 // Métodos a utilizar:
 // isRegistered (focusRoute, returnObject, req, res)
 // isRegisteredwToken (focusRoute, returnObject, req, res)
-// findUserByEmail (emailValue)
+// findUser (filter)
 // addUser (user)
 // updateUser (filter, update, options)
 // deleteUser (filter)

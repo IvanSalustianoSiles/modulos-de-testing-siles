@@ -22,16 +22,16 @@ describe("Test DAO-MDB Service", function() {
         const result = await UserMDBService.getAllUsers();
         expect(result).to.be.an("array");
     });
-    it("findUserByEmail() |  Debe retornar el objeto del usuario encontrado por email", async function() {
-        const result = await UserMDBService.findUserByEmail(testUser.email);
+    it("findUser(emailFilter) |  Debe retornar el objeto del usuario encontrado por email", async function() {
+        const result = await UserMDBService.findUser({ email: testUser.email });
         testUser._id = result._id;
         expect(result).to.be.an("object");
         expect(result._id).to.be.not.null;
         expect(result.email).to.be.deep.equal(testUser.email);
     });
-    it("findUserById() | Debe retornar el objeto del usuario encontrado por ID", async function() {
+    it("findUser(IdFilter) | Debe retornar el objeto del usuario encontrado por ID", async function() {
         const id = testUser._id;
-        const result = await UserMDBService.findUserById(id);
+        const result = await UserMDBService.findUser({ _id: id });
         expect(result).to.be.an("object");
         expect(result._id).to.be.not.null;
         expect(result._id).to.be.deep.equal(id);

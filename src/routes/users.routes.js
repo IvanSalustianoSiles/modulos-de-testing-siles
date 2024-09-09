@@ -67,7 +67,7 @@ router.post("/restore", async (req, res) => {
   try {
     const { email } = req.body;
 
-    const emailValidation = await UserManager.findUserByEmail(email);
+    const emailValidation = await UserManager.findUser({ email: email });
 
     if (!emailValidation) res.redirect(`/restore?error=${encodeURI("Correo inválido.")}`);
     
@@ -104,7 +104,7 @@ router.post("/restorecallback", async (req, res) => {
     
     const { password } = req.body;    
 
-    const user = await UserManager.findUserByEmail(req.session.temporalEmail);
+    const user = await UserManager.findUser({email: req.session.temporalEmail });
 
     
     const validationPass = isValidPassword(user, password);
@@ -131,7 +131,7 @@ router.post("/premium/:uid", verifyMDBID(["uid"]), handlePolicies(["ADMIN"]), as
   try {
     const { uid } = req.params;
 
-    const myUser = await UserManager.findUserById(uid);
+    const myUser = await UserManager.findUser({ _id: uid });
         
     if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
 

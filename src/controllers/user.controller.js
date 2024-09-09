@@ -56,29 +56,13 @@ class UserManagerClass {
       throw new CustomError(error.type, `[isRegistered]: ${error.message}`);
     }
   };
-  findUserByEmail = async (emailValue) => {
+  findUser = async (filter, noSensitive) => {
     try {
-      return await this.service.findUserByEmail(emailValue);
-    } catch (error) {
-      throw new CustomError(error.type, `[findUserByEmail]: ${error.message}`);
-    }
-  };
-  findUserById = async (uid) => {
-    try {
-      const myUser = await this.service.findUserById(uid);
-      if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);  
-      return myUser;
+      let foundUser = await this.service.findUser(filter);
+      if (noSensitive) foundUser = await DTO.removeSensitive(foundUser);
+      return foundUser;
     } catch (error) {
       return undefined;
-    }
-  };
-  findFilteredUser = async (emailValue) => {
-    try {
-      const foundUser = await this.service.findUserByEmail(emailValue);
-      const filteredUser = await DTO.removeSensitive(foundUser);
-      return filteredUser;
-    } catch (error) {
-      throw new CustomError(error.type, `[findFilteredUser]: ${error.message}`);
     }
   };
   addUser = async (user) => {
@@ -114,7 +98,7 @@ class UserManagerClass {
 
 // Métodos a utilizar:
 // isRegistered (focusRoute, returnObject, req, res)
-// findUserByEmail (emailValue)
+// findUser (filter)
 // addUser (user)
 // updateUser (filter, update, options)
 // deleteUser (filter)

@@ -25,8 +25,7 @@ const initAuthStrategies = () => {
       { passReqToCallback: true, usernameField: "email" },
       async (req, username, password, done) => {   
         try {
-
-          let myUser = await UserManager.findUserByEmail(username);
+          let myUser = await UserManager.findUser({email:username});
 
           const validation = isValidPassword(myUser, password);
           
@@ -48,8 +47,8 @@ const initAuthStrategies = () => {
       async (req, username, password, done) => {
       
         try {
-          
-          let user = await UserManager.findUserByEmail(username);
+
+          let user = await UserManager.findUser({ email: username });
           
           if (user) return done(new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "Datos ya ocupados"), false);
           
@@ -88,7 +87,7 @@ const initAuthStrategies = () => {
             email = emails.filter(email => email.verified).map(email => ({ value: email.email}))
           }
           if (email) {
-            const foundUser = await UserManager.findUserByEmail(email || emailList[0]);
+            const foundUser = await UserManager.findUser({ email: email || emailList[0] });
             if (!foundUser) {
               const cart = await CartManager.createCartMDB();
               let completeName = profile._json.name.split(" ");

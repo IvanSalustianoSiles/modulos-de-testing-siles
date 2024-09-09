@@ -20,16 +20,16 @@ describe("Test DAO-MDB Service", function() {
         const result = await UserMDBService.getAllUsers();
         assert.strictEqual(Array.isArray(result), true);
     });
-    it("findUserByEmail() |  Debe retornar el objeto del usuario encontrado por email", async function() {
-        const result = await UserMDBService.findUserByEmail(testUser.email);
+    it("findUser(emailFilter) |  Debe retornar el objeto del usuario encontrado por email", async function() {
+        const result = await UserMDBService.findUser({ email:testUser.email });
         testUser._id = result._id;
         assert.strictEqual(typeof(result), "object");
         assert.ok(result._id);
         assert.deepStrictEqual(result.email, testUser.email);
     });
-    it("findUserById() | Debe retornar el objeto del usuario encontrado por ID", async function() {
+    it("findUser(idFilter) | Debe retornar el objeto del usuario encontrado por ID", async function() {
         const id = testUser._id;
-        const result = await UserMDBService.findUserById(id);
+        const result = await UserMDBService.findUser({ _id: id });
         assert.strictEqual(typeof(result), "object");
         assert.ok(result._id);
         assert.deepStrictEqual(result._id, id);

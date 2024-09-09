@@ -28,7 +28,7 @@ router.post("/login", verifyRequiredBody(["email", "password"]), passport.authen
   }
 );
 router.post("/register", verifyRequiredBody(["first_name", "last_name", "password", "email"]), passport.authenticate("register", { failureRedirect: `/register?error=${encodeURI("Email y/o contraseña no válidos.")}` }), async (req, res) => {
-    try {
+    try {   
       req.session.user = req.user;    
       req.session.save(async (error) => {
         if (error) throw new CustomError(errorDictionary.SESSION_ERROR, `${error}`);
@@ -60,30 +60,16 @@ router.get("/ghlogincallback", passport.authenticate("ghlogin", { failureRedirec
 );
 router.get("/private", handlePolicies(["ADMIN"]), async (req, res) => {
   try {
-    if (!req.session.user) {
-      res.redirect("/login");
-    } else if (req.session.user.role == "admin") {
-      try {
-        res.status(200).send("Bienvenido, admin.");
-      } catch (error) {
-        throw new CustomError(errorDictionary.UNHANDLED_ERROR, `${error}`);
-      }
-    } else {
-      try {
-        throw new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, `Sólo los administradores del sitio pueden ingresar.`);
-      } catch (error) {
-        throw new CustomError(errorDictionary.UNHANDLED_ERROR, `${error}`);
-      }
-    }
+    res.status(200).send("Bienvenido, admin.");
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
-  };
+  }
 });
 router.get("/logout", async (req, res) => {
   try {
-    const email = await req.session.user.email;
-    console.log(email);    
+    const email = await req.session.user ? req.session.user.email : undefined; 
+    if (!email) throw new CustomError(errorDictionary.SESSION_ERROR);
     req.session.destroy(async (error) => {
       if (error) throw new CustomError(errorDictionary.SESSION_ERROR, `${error}`);
       await req.logger.info(`${new Date().toDateString()} Usuario "${email}" cerró sesión; Sesión destruída. ${req.url}`);
@@ -97,7 +83,7 @@ router.get("/logout", async (req, res) => {
 router.get("/current", async (req, res) => {
   try {
     if (!req.session.user) return res.redirect("/login");
-    const myUser = await UserManager.findFilteredUser(req.session.user.email);
+    const myUser = await UserManager.findUser({ email: req.session.user.email }, true);
     res.status(200).send({origin: config.SERVER, payload: myUser });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);

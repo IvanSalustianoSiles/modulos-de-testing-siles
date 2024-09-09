@@ -9,7 +9,7 @@ import passport from "passport";
 import cluster from "cluster";
 import cors from "cors";
 import { CLOptions } from "./config.js";
-import { initSocket, errorHandler, addLogger, UserMDBService }  from "./services/index.js";
+import { initSocket, errorHandler, addLogger }  from "./services/index.js";
 import { productRoutes, cartRoutes, viewRoutes, userRoutes, authRoutes } from "./routes/index.js";
 import { MongoSingleton }  from "./services/index.js";
 
@@ -88,4 +88,3 @@ import { MongoSingleton }  from "./services/index.js";
 //     console.log(error.message);
 //   }
 // };
-

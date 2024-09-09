@@ -16,6 +16,8 @@ export const createHash = (password) => {
 };
 export const isValidPassword = (user, password) => { 
   try {
+    console.log(user);
+    console.log(password);        
     return bcrypt.compareSync(password, user.password);
   } catch (error) {
     return null;
