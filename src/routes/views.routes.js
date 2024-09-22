@@ -201,4 +201,8 @@ router.get("/roleChange/:uid", verifyMDBID(["uid"]), handlePolicies(["ADMIN"]), 
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
 }
 });
+
+router.get("/testeando", async (req, res) => {
+  res.render("register", { postAction: "/api/auth/register", hrefLog: "/login", showError: req.query.error ? true : false, errorMessage: req.query.error })
+})
 export default router;

@@ -4,7 +4,6 @@ import config from "../config.js";
 import CustomError from "./custom.error.class.js";
 import { errorDictionary } from "../config.js";
 import { faker } from "@faker-js/faker";
-import ProductManager from "../controllers/product.controller.js";
 
 export const catchCall = (router, text) => {
   return router.all("*", async (req, res) => {
@@ -71,6 +70,9 @@ export const verifyRequiredBody = (requiredFields) => {
    
   return (req, res, next) => {
     try {
+      
+      if (req.body.json) req.body = JSON.parse(req.body.json);
+
       const allOk = requiredFields.every((field) => {
 
         return (
@@ -79,9 +81,9 @@ export const verifyRequiredBody = (requiredFields) => {
           req.body[field] !== null &&
           req.body[field] !== undefined
         );
-      });
-      if (!allOk) throw new CustomError(errorDictionary.FEW_PARAMS_ERROR, `${requiredFields}`);
-  
+      });      
+      
+      if (!allOk) throw new CustomError(errorDictionary.FEW_PARAMS_ERROR, `${requiredFields}`);   
       next();
     } catch (error) {
       throw new CustomError(error.type, error.message);

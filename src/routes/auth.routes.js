@@ -5,7 +5,7 @@ import initAuthStrategies from "../auth/passport.strategies.js";
 import { UserManager } from "../controllers/index.js";
 import CustomError from "../services/custom.error.class.js";
 import { errorDictionary } from "../config.js";
-import { verifyRequiredBody } from "../services/index.js";
+import { verifyRequiredBody, uploader } from "../services/index.js";
 import { handlePolicies } from "../services/index.js";
 
 const router = Router();
@@ -27,13 +27,13 @@ router.post("/login", verifyRequiredBody(["email", "password"]), passport.authen
     }
   }
 );
-router.post("/register", verifyRequiredBody(["first_name", "last_name", "password", "email"]), passport.authenticate("register", { failureRedirect: `/register?error=${encodeURI("Email y/o contraseña no válidos.")}` }), async (req, res) => {
-    try {   
-      req.session.user = req.user;    
+router.post("/register", uploader.array("files"), verifyRequiredBody(["first_name", "last_name", "password", "email"]), passport.authenticate("register", { failureRedirect: `/register?error=${encodeURI("Email y/o contraseña no válidos.")}` }), async (req, res) => {
+    try {       
+      req.session.user = req.user;     
       req.session.save(async (error) => {
         if (error) throw new CustomError(errorDictionary.SESSION_ERROR, `${error}`);
         await req.logger.info(`${new Date().toDateString()} Usuario "${req.session.user.email}" registrado; Sesión almacenada. ${req.url}`);
-        res.redirect("/products");
+        res.status(302).send({ redirectUrl: "/products" });
       });
     } catch (error) {
       req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);

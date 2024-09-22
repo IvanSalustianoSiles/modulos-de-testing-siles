@@ -40,7 +40,7 @@ const cartPolicies = () => {
 
 router.get("/", async (req, res) => {
   try {
-    const carts = await cartsModel.find().lean();
+    const carts = await CartManager.getAllCarts();
     if (!carts) throw new CustomError(errorDictionary.GENERAL_FOUND_ERROR, "Carritos");
     res.status(200).send({ origin: config.SERVER, payload: carts });
   } catch (error) {

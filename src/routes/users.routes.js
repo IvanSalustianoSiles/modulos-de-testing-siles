@@ -135,6 +135,7 @@ router.post("/premium/:uid", verifyMDBID(["uid"]), handlePolicies(["ADMIN"]), as
         
     if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
 
+    if (!myUser.documents) throw new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "El usuario posee documentos insuficientes para cambiar de rol");
     let role = myUser.role.toUpperCase();
 
     if (role == "USER") {

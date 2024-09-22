@@ -12,12 +12,6 @@ const localStrategy = local.Strategy;
 const jwtStrategy = jwt.Strategy;
 const jwtExtractor = jwt.ExtractJwt;
 
-const cookieExtractor = (req) => {
-  let token = null;
-  if (req && req.cookies) token = req.cookies[`${config.APP_NAME}_cookie`];
-  return token;
-};
-
 const initAuthStrategies = () => {
   passport.use(
     "login",
@@ -52,9 +46,18 @@ const initAuthStrategies = () => {
           
           if (user) return done(new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "Datos ya ocupados"), false);
           
+          if (req.body.documents) {
+            req.body.documents = req.body.documents.map((document, i) => {
+              return { ...document, reference: `/src/public/img/${req.files[i].originalname}`}
+            });
+          };        
+
           const newUser = { ...req.body, password: createHash(password)};
           
           let result = await UserManager.addUser(newUser);
+          
+          if (!result) throw new CustomError(errorDictionary.ADD_DATA_ERROR, "Usuario");
+          
           return done(null, result);
           
         } catch (error) {

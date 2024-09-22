@@ -21,7 +21,7 @@ describe("Test DAO-MDB Service", function() {
         assert.strictEqual(Array.isArray(result), true);
     });
     it("findUser(emailFilter) |  Debe retornar el objeto del usuario encontrado por email", async function() {
-        const result = await UserMDBService.findUser({ email:testUser.email });
+        const result = await UserMDBService.findUser({ email: testUser.email });
         testUser._id = result._id;
         assert.strictEqual(typeof(result), "object");
         assert.ok(result._id);
