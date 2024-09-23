@@ -14,9 +14,7 @@ export const createHash = (password) => {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(10));
 };
 export const isValidPassword = (user, password) => { 
-  try {
-    console.log(user);
-    console.log(password);        
+  try {    
     return bcrypt.compareSync(password, user.password);
   } catch (error) {
     return null;
@@ -53,16 +51,20 @@ export const verifyAndReturnToken = (req, res) => {
     throw new CustomError(errorDictionary.UNHANDLED_ERROR, `${error}`);
   }
 };
-export const verifyMDBID = (ids) => {
+export const verifyMDBID = (ids, check = undefined) => {
   return (req, res, next) => {
     try {
       for (let i = 0; i < ids.length; i++) {
         let id = ids[i];
         if (!config.MONGODB_ID_REGEX.test(req.params[id])) throw new CustomError(errorDictionary.AUTHORIZE_ID_ERROR, `${req.params[id]}`);
+      } 
+      if (check !== undefined && check.compare) {
+        if ((check.compare == "USER" && req.params["uid"] != req.session.user._id) || (check.compare == "CART" && req.params["cid"] != req.session.user.cart)) throw new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "No corresponde su ID");
       }
       next();
     } catch (error) {
-      throw new CustomError(errorDictionary.UNHANDLED_ERROR, `${error}`);
+      res.send(error);
+      // res.send({ origin: config.SERVER, error: `[ERROR::${error.type.status}; CODE::${error.type.code}]: ${error.type.message}`});
     } 
   }
 };
@@ -70,9 +72,9 @@ export const verifyRequiredBody = (requiredFields) => {
    
   return (req, res, next) => {
     try {
-      
-      if (req.body.json) req.body = JSON.parse(req.body.json);
 
+      console.log(req.body);
+      
       const allOk = requiredFields.every((field) => {
 
         return (
@@ -106,7 +108,7 @@ export const generateRandomId = () => {
 };
 export const handlePolicies = (policies) => {
   return (req, res, next) => {
-    try {
+    try {   
       if (policies[0] === "PUBLIC") return next();
       let user = req.session.user;
       if (!user) throw new CustomError(errorDictionary.AUTHENTICATE_USER_ERROR);
@@ -167,6 +169,33 @@ export const verifyRestoreCode = () => {
       next();
     } catch (error) {
       res.redirect(`/restore?error=${encodeURI(`${error.message}`)}`);
+    }
+  }
+};
+export const routeDate = () => {
+  return (req, res, next) => {
+    try {
+      const routeDate = new Date();
+      if (!routeDate) throw new CustomError(errorDictionary.GENERATE_DATA_ERROR, "Fecha");
+      req.date = routeDate;
+      next();
+    } catch (error) {
+      req.logger.error(`[DATE::FAILURE]; ${error}; ${req.url}`);
+      return res.status(500).send(error);
+    }
+  }
+};
+export const regularCleanUp = (controller) => {
+  return (req, res, next) => {
+    try {
+      setInterval(async () => {
+        const aYearAgo = new Date();
+        aYearAgo.setFullYear(aYearAgo.getFullYear() - 1);
+        await controller.updateUser({ last_connection: { $lt: aYearAgo } }, { active: false }, { multi: true, new: true });
+      }, 1000 * 60 * 60 * 24);
+      next();
+    } catch (error) {
+      req.logger.error(`${new Date()}; ${error}; ${req.url}`);
     }
   }
 };

@@ -26,7 +26,9 @@ const userSchema = new mongoose.Schema({
       reference: { type: String }
     }
   ],
-  last_connection: { type: String }
+  last_connection: { type: Date },
+  active: { type: Boolean, default: true },
+  status: { type: Boolean, default: false }
 });
 
 userSchema.pre("find", function () {

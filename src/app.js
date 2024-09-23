@@ -9,11 +9,10 @@ import passport from "passport";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUiExpress from "swagger-ui-express";
 import cors from "cors";
+import UserManager from "./controllers/user.controller.js";
 import { CLOptions } from "./config.js";
-import { initSocket, errorHandler, addLogger }  from "./services/index.js";
+import { initSocket, errorHandler, addLogger, regularCleanUp, MongoSingleton }  from "./services/index.js";
 import { productRoutes, cartRoutes, viewRoutes, userRoutes, authRoutes } from "./routes/index.js";
-import { MongoSingleton }  from "./services/index.js";
-
 // Server init
 const app = express();
 const httpServer = app.listen(config.PORT, async () => {
@@ -56,6 +55,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 app.set("socketServer", socketServer);
+app.use(regularCleanUp(UserManager));
 
 // Views
 app.engine("handlebars", handlebars.engine());

@@ -1,6 +1,6 @@
 <div>
     <h1>Registrarse</h1>
-    <form id="registerForm" enctype="multipart/form-data">
+    <form id="registerForm" method="post" action={{postAction}}>
         <input required="true" placeholder="Nombre" name="first_name" type="text">
         <input required="true" placeholder="Apellido" name="last_name" type="text">
         <input required="true" placeholder="Contraseña" name="password" type="password">
@@ -8,64 +8,12 @@
         <input required="true" placeholder="Número" name="phoneNumber" type="tel">
         <input placeholder="Descripción" name="description" type="text">
         <input placeholder="Edad" name="age" type="number">
-        <input name="document" type="file" multiple>
         {{#if showError}}
             <div style="color: rgb(191, 22, 22)">
                 {{errorMessage}}
             </div>
         {{/if}}
-        <button id="sendButton" onclick="sendUser()" type="submit">Registrarse</button>
+        <button id="sendButton" type="submit">Registrarse</button>
     </form>
     <p>¿Ya tienes cuenta? Haz click en <a href={{hrefLog}}>iniciar sesión</a>.</p>
 </div>
-
-<script>
-    const registerForm = document.getElementById("registerForm");
-    const sendButton = document.getElementById("sendButton");
-
-    registerForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    });
-
-    const sendUser = () => {
-
-        let documents = [];
-
-        for (let i = 0; i < registerForm[7].files.length; i++) {
-            documents.push({ name: registerForm[7].files[i].name });
-        }
-
-        let formUser = {
-            first_name: registerForm[0].value,
-            last_name: registerForm[1].value,
-            password: registerForm[2].value,
-            email: registerForm[3].value,
-            phoneNumber: registerForm[4].value,
-            description: registerForm[5].value,
-            age: registerForm[6].value,
-        };
-
-        if (documents.length !== 0) formUser.documents = documents;
-
-        const myUser = JSON.stringify(formUser);
-
-        let formData = new FormData();
-
-        for (let i = 0; i < registerForm[7].files.length; i++) {
-        formData.append('files', registerForm[7].files[i]);
-        };
-
-        formData.append("json", myUser);
-
-        fetch("/api/auth/register", {
-            method: "POST",
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.redirectUrl) {
-                window.location.href = data.redirectUrl; // Redirigir manualmente
-            }
-        })
-    }
-</script>

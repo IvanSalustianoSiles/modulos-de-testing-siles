@@ -12,11 +12,11 @@ import CustomError from "../services/custom.error.class.js";
 let toSendObject = {};
 const router = Router();
 
-router.get("/products", async (req, res) => {
+router.get("/products", handlePolicies(["USER", "PREMIUM", "ADMIN"]), async (req, res) => {
   try {
     let paginated = await ProductManager.getPaginatedProducts( req.query.limit, req.query.page, req.query.query, req.query.sort, req.query.available, "/products");
     if (!paginated) throw new CustomError(errorDictionary.GENERAL_FOUND_ERROR, `Productos en paginación`);
-    await UserManager.isRegistered(
+    res.render(
       "home",
       {
         payload: paginated.payload,
@@ -26,10 +26,7 @@ router.get("/products", async (req, res) => {
         ...req.session.user,
         showError: req.query.error ? true : false,
         error: req.query.error
-      },
-      req,
-      res
-    );
+      });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
@@ -50,7 +47,7 @@ router.post("/products", async (req, res) => {
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
 }
 });
-router.get("/carts/:cid", verifyMDBID(["cid"]), async (req, res) => {
+router.get("/carts/:cid", verifyMDBID(["cid"]), handlePolicies(["USER", "PREMIUM", "ADMIN"]), async (req, res) => {
   try {
     const { cid } = req.params;
     if (!cid) throw new CustomError(errorDictionary.FOUND_ID_ERROR, `${cid}`);
@@ -58,22 +55,17 @@ router.get("/carts/:cid", verifyMDBID(["cid"]), async (req, res) => {
     if (!cart) throw new CustomError(errorDictionary.GENERAL_FOUND_ERROR, `Carrito`);
     const toSendObject = await CartManager.getProductsOfACart(cart);
     if (!toSendObject) throw new CustomError(errorDictionary.GENERAL_FOUND_ERROR, `Productos del carrito`);
-    await UserManager.isRegistered("cart", { toSendObject: toSendObject }, req, res);
+    res.render("cart", { toSendObject: toSendObject });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
 }
 });
-router.get("/realtimeproducts", async (req, res) => {
+router.get("/realtimeproducts", handlePolicies(["USER", "PREMIUM", "ADMIN"]), async (req, res) => {
   try {
     toSendObject = await ProductManager.getPaginatedProducts();
     if (!toSendObject) throw new CustomError(errorDictionary.GENERAL_FOUND_ERROR, `Productos`);
-    await UserManager.isRegistered(
-      "realTimeProducts",
-      { toSendObject: toSendObject },
-      req,
-      res
-    );
+    res.render("realTimeProducts", { toSendObject: toSendObject });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
@@ -122,11 +114,11 @@ router.post("/realtimeproducts", uploader.single("archivo"), async (req, res) =>
 });
 router.get("/chat", handlePolicies(["USER"]), async (req, res) => {
   try {
-    await UserManager.isRegistered("chat", {}, req, res);
+    res.render("chat", {});
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
-}
+  }
 });
 router.get("/login", async (req, res) => {
   try {
@@ -146,13 +138,13 @@ router.get("/register", (req, res) => {
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
 }
 });
-router.get("/profile", async (req, res) => {
+router.get("/profile", handlePolicies(["USER", "PREMIUM", "ADMIN"]), async (req, res) => {
   try {
-    await UserManager.isRegistered("profile", { user: req.session.user, showWarning: req.query.warning ? true : false, warning: req.query.warning }, req, res);
+    res.render("profile", { user: req.session.user, showWarning: req.query.warning ? true : false, warning: req.query.warning });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
-}
+  }
 });
 router.get("/mockingproducts", async (req, res) => {
   try {
@@ -195,14 +187,20 @@ router.get("/restorecallback/:code", verifyRestoreCode(), async (req, res) => {
 router.get("/roleChange/:uid", verifyMDBID(["uid"]), handlePolicies(["ADMIN"]), async (req, res) => {
   try {
     const { uid } = req.params;
-    await UserManager.isRegistered("roleChange", { postAction: `/api/users/premium/${uid}` }, req, res);
+    res.render("roleChange", { postAction: `/api/users/premium/${uid}` });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
-}
+  }
 });
+router.get("/:uid/documents", verifyMDBID(["uid"], { compare: "USER" }), handlePolicies(["USER", "PREMIUM", "ADMIN"]), async (req, res) => {
+  try {
+    const { uid } = req.params;
 
-router.get("/testeando", async (req, res) => {
-  res.render("register", { postAction: "/api/auth/register", hrefLog: "/login", showError: req.query.error ? true : false, errorMessage: req.query.error })
-})
+    res.render("documents", {  postAction: `/api/users/${uid}/documents` })
+  } catch (error) {
+    req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
+    res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
+  }
+});
 export default router;

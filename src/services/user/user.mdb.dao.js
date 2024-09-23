@@ -53,9 +53,16 @@ class UserMDBClass {
       return undefined;
     }
   };
-  updateUser = async (filter, update, options = { new: true }) => {
+  updateUser = async (filter, update, options = { multi: false, new: true }) => {
     try {
-      const dbUser = await this.model.findOneAndUpdate(filter, update, options);
+
+      let dbUser = {};
+
+      const { multi, ...restOptions } = options;
+
+      dbUser = multi ? await this.model.updateMany(filter, update, restOptions)
+      : await this.model.findOneAndUpdate(filter, update, restOptions);
+      
       if (!dbUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR, `Usuario a actualizar`);
       return dbUser;
     } catch (error) {
@@ -79,6 +86,25 @@ class UserMDBClass {
       return dbUsers;
     } catch (error) {
       return undefined;
+    }
+  };
+  addFiles = async (uid, files) => {
+    try {
+      const newDocuments = await files.map(file => {
+        return { name: file.originalname, reference: `/src/public/img/${file.originalname}`}
+      });
+      const myUser = await this.findUser({ _id: uid });
+      
+      if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
+
+      const updatedUser = await this.updateUser({ _id: uid }, { documents: [...myUser.documents, ...newDocuments] }, { new: true });
+
+      if (!updatedUser) throw new CustomError(errorDictionary.UPDATE_DATA_ERROR, "User");
+
+      return updatedUser;
+      
+    } catch (error) {
+      throw new CustomError(error.type, `[paginateUsers]: ${error.message}`);
     }
   };
 };

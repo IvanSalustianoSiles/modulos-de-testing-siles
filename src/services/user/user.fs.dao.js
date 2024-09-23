@@ -205,6 +205,25 @@ class UserFSClass {
       return undefined;
     }
   };
+  addFiles = async (uid, files) => {
+    try {
+      const newDocuments = await files.map(file => {
+        return { name: file.originalname, reference: `/src/public/img/${file.originalname}`}
+      });
+      const myUser = await this.findUser({ _id: uid });
+      
+      if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
+
+      const updatedUser = await this.updateUser({ _id: uid }, { documents: [...myUser.documents, ...newDocuments] }, { new: true });
+
+      if (!updatedUser) throw new CustomError(errorDictionary.UPDATE_DATA_ERROR, "User");
+
+      return updatedUser;
+      
+    } catch (error) {
+      return undefined;
+    }
+  };
 };
 
 // Métodos a utilizar:
@@ -217,6 +236,7 @@ class UserFSClass {
 // paginateUsers (...filters)
 // updateFile (array)
 // readFileAndSave()
+// addFiles (uid, files)
 
 const UserFSService = new UserFSClass();
 

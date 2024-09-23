@@ -42,8 +42,14 @@ const config = {
   PORT: CLOptions.port || PORT,
   DIRNAME: url.fileURLToPath(new URL(".", import.meta.url)),
   SERVER: CLOptions.server || SERVER,
-  get UPLOAD_DIR() {
-    return `${this.DIRNAME}/public/img`;
+  get UPLOAD_PROFILE_DIR() {
+    return `${this.DIRNAME}/public/profile`;
+  },
+  get UPLOAD_PRODUCTS_DIR() {
+    return `${this.DIRNAME}/public/products`;
+  },
+  get UPLOAD_DOCS_DIR() {
+    return `${this.DIRNAME}/public/documents`;
   },
   MONGO_URI: CLOptions.mongouri || MONGO_URI,
   MONGODB_ID_REGEX: /^[a-fA-F0-9]{24}$/,

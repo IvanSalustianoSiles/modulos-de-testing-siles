@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { UserManager, ProductManager } from "../controllers/index.js";
+import { UserManager } from "../controllers/index.js";
 import { createHash, generateDateAndHour, generateRandomCode, isValidPassword, verifyMDBID } from "../services/index.js";
 import config from "../config.js";
-import { handlePolicies } from "../services/index.js";
+import { handlePolicies, uploader } from "../services/index.js";
 import { errorDictionary } from "../config.js";
 import nodemailer from "nodemailer";
 import CustomError from "../services/custom.error.class.js";
@@ -38,9 +38,9 @@ router.post("/", handlePolicies(["ADMIN"]), async (req, res) => {
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
 }
 });
-router.put("/:id", handlePolicies(["ADMIN"]), verifyMDBID(["id"]), async (req, res) => {
+router.put("/:uid", handlePolicies(["ADMIN"]), verifyMDBID(["uid"]), async (req, res) => {
   try {
-    const filter = { _id: req.params.id };
+    const filter = { _id: req.params.uid };
     const update = req.body;
     const options = { new: true };
     const process = await UserManager.updateUser(filter, update, options);
@@ -51,12 +51,12 @@ router.put("/:id", handlePolicies(["ADMIN"]), verifyMDBID(["id"]), async (req, r
     res.send({ origin: config.SERVER, status: error.status, type: error.type, message: error.message });
 }
 });
-router.delete("/:id", handlePolicies(["ADMIN"]), verifyMDBID(["id"]), async (req, res) => {
+router.delete("/:uid", handlePolicies(["ADMIN"]), verifyMDBID(["uid"]), async (req, res) => {
   try {
-    const filter = { _id: req.params.id };
+    const filter = { _id: req.params.uid };
     const process = await UserManager.deleteUser(filter);
     if (!process) throw new CustomError(errorDictionary.DELETE_DATA_ERROR, `Usuario`);
-    await req.logger.info(`${new Date().toDateString()} Usuario de ID ${req.params.id} eliminado. ${req.url}`);
+    await req.logger.info(`${new Date().toDateString()} Usuario de ID ${req.params.uid} eliminado. ${req.url}`);
     res.status(200).send({ origin: config.SERVER, payload: process });
   } catch (error) {
     req.logger.error(`${new Date().toDateString()}; ${error}; ${req.url}`);
@@ -134,11 +134,11 @@ router.post("/premium/:uid", verifyMDBID(["uid"]), handlePolicies(["ADMIN"]), as
     const myUser = await UserManager.findUser({ _id: uid });
         
     if (!myUser) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
-
-    if (!myUser.documents) throw new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "El usuario posee documentos insuficientes para cambiar de rol");
+    
     let role = myUser.role.toUpperCase();
 
     if (role == "USER") {
+      if (!myUser.status) throw new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "El usuario posee documentos insuficientes para cambiar de rol");
       const updateOne = await UserManager.updateUser({_id: myUser._id}, {role: "premium"});
       if (!updateOne) throw new CustomError(errorDictionary.FOUND_USER_ERROR);
       res.send({ origin: config.SERVER, payload: `Rol de usuario ${myUser.first_name} ${myUser.last_name} actualizado a ${updateOne.role}.`})
@@ -149,6 +149,19 @@ router.post("/premium/:uid", verifyMDBID(["uid"]), handlePolicies(["ADMIN"]), as
     }
   } catch (error) {
     res.send({ origin: config.SERVER, error: error });
+  }
+});
+router.post("/:uid/documents", uploader.array("docs"), verifyMDBID(["uid"]), async (req, res) => {
+  try {
+    const { uid } = req.params;
+    if (req.files.length == 3) {
+      const updatedUser = await UserManager.updateUser({ email: req.user.email }, { status: true }, { new: true });
+      if (!updatedUser) throw new CustomError(errorDictionary.UPDATE_DATA_ERROR, "Usuario");
+    }
+    const addingFiles = await UserManager.addFiles(uid, req.files);
+    if (!addingFiles) throw new CustomError(errorDictionary.ADD_DATA_ERROR, "Usuario");
+  } catch (error) {
+    res.send({ origin: config.SERVER, error: `[ERROR::${error.type.status}; CODE::${error.type.code}]: ${error.type.message}`});
   }
 });
 export default router;

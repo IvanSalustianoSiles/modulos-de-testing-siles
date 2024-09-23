@@ -19,14 +19,19 @@ const initAuthStrategies = () => {
       { passReqToCallback: true, usernameField: "email" },
       async (req, username, password, done) => {   
         try {
-          let myUser = await UserManager.findUser({email:username});
+          let myUser = await UserManager.findUser({ email: username });
 
           const validation = isValidPassword(myUser, password);
           
           if (myUser && validation) {
-            return done(null, myUser);
+            
+            if (myUser.active == false) return done("Tu usuario aún existe pero ha sido desactivado por falta de actividad. Por favor, contáctate con servicio técnico.");
+            
+            const updatedUser = await UserManager.updateUser({ email: username }, { last_connection: req.date }, { new: true });
+            
+            return done(null, updatedUser);
           } else {
-            return done(new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "Error al iniciar sesión"), false);
+            throw new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "Error al iniciar sesión");
           }
         } catch (error) {
           return done(error, false);
@@ -39,20 +44,13 @@ const initAuthStrategies = () => {
     new localStrategy(
       { passReqToCallback: true, usernameField: "email" },
       async (req, username, password, done) => {
-      
         try {
 
           let user = await UserManager.findUser({ email: username });
           
-          if (user) return done(new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "Datos ya ocupados"), false);
-          
-          if (req.body.documents) {
-            req.body.documents = req.body.documents.map((document, i) => {
-              return { ...document, reference: `/src/public/img/${req.files[i].originalname}`}
-            });
-          };        
+          if (user) return done(new CustomError(errorDictionary.AUTHORIZE_USER_ERROR, "Datos ya ocupados"), false);    
 
-          const newUser = { ...req.body, password: createHash(password)};
+          const newUser = { ...req.body, password: createHash(password), last_connection: req.date };
           
           let result = await UserManager.addUser(newUser);
           
@@ -92,7 +90,7 @@ const initAuthStrategies = () => {
           if (email) {
             const foundUser = await UserManager.findUser({ email: email || emailList[0] });
             if (!foundUser) {
-              const cart = await CartManager.createCartMDB();
+              const cart = await CartManager.createCart();
               let completeName = profile._json.name.split(" ");
               let last = completeName.pop();
               let first = completeName.join(" ");
@@ -101,19 +99,24 @@ const initAuthStrategies = () => {
                 last_name: last,
                 email: email,
                 password: "none",
-                cart: await cart.ID
+                cart: await cart.ID,
+                last_connection: req.date
               };
               const addingUser = await UserManager.addUser(newUser);
+              if (!addingUser) throw new CustomError(errorDictionary.ADD_DATA_ERROR, "Usuario");
               return done(null, addingUser);
             } else {
               console.log("Usuario previamente registrado.");
-              return done(null, foundUser);
+              if (foundUser.active == false) return done("Tu usuario aún existe pero ha sido desactivado por falta de actividad. Por favor, contáctate con servicio técnico.");
+              const updatedUser = await UserManager.updateUser({ email: foundUser.email }, { last_connection: req.date }, { new: true }); 
+              if (!updatedUser) throw new CustomError(errorDictionary.UPDATE_DATA_ERROR, "Usuario");
+              return done(null, updatedUser);
             }
           } else {
-            return done(new CustomError(errorDictionary.FEW_PARAMS_ERROR, "Datos del perfil"), null);
+            throw new CustomError(errorDictionary.FEW_PARAMS_ERROR, "Datos del perfil");
           }
         } catch (error) {
-          return done(new CustomError(errorDictionary.UNHANDLED_ERROR, "Ghlogin"));
+          return done(error);
         }
       }
     )

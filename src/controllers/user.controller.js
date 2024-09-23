@@ -94,6 +94,13 @@ class UserManagerClass {
       throw new CustomError(error.type, `[paginateUsers]: ${error.message}`);
     }
   };
+  addFiles = async (uid, files) => {
+    try {
+      return await this.service.addFiles(uid, files);
+    } catch (error) {
+      throw new CustomError(error.type, `[paginateUsers]: ${error.message}`);
+    }
+  };
 };
 
 // Métodos a utilizar:
